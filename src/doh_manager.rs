@@ -18,41 +18,41 @@ pub enum Browser {
 
 pub fn get_doh_status(browser: Browser) -> DohStatus {
     #[cfg(target_os = "windows")] {
-        match browser {
+        return match browser {
             Browser::Chrome => get_chrome_doh_status_windows(),
             Browser::Edge => get_edge_doh_status_windows(),
-        }
+        };
     }
     
     #[cfg(target_os = "macos")] {
-        match browser {
+        return match browser {
             Browser::Chrome => get_chrome_doh_status_macos(),
             Browser::Edge => get_edge_doh_status_macos(),
-        }
+        };
     }
     
     #[cfg(not(any(target_os = "windows", target_os = "macos")))] {
-        DohStatus::Unknown
+        return DohStatus::Unknown;
     }
 }
 
 pub fn set_doh_status(browser: Browser, enabled: bool) -> Result<(), String> {
     #[cfg(target_os = "windows")] {
-        match browser {
+        return match browser {
             Browser::Chrome => set_chrome_doh_status_windows(enabled),
             Browser::Edge => set_edge_doh_status_windows(enabled),
-        }
+        };
     }
     
     #[cfg(target_os = "macos")] {
-        match browser {
+        return match browser {
             Browser::Chrome => set_chrome_doh_status_macos(enabled),
             Browser::Edge => set_edge_doh_status_macos(enabled),
-        }
+        };
     }
     
     #[cfg(not(any(target_os = "windows", target_os = "macos")))] {
-        Err("Unsupported platform".to_string())
+        return Err("Unsupported platform".to_string());
     }
 }
 
