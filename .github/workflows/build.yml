@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+    - name: Build
+      run: cargo build --release
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: doh-toggle-windows
+        path: target/release/doh_toggle.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        default: true
+    - name: Build
+      run: cargo build --release
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: doh-toggle-macos
+        path: target/release/doh_toggle
