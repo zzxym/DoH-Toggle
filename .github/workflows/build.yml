@@ -5,9 +5,26 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择构建平台'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - macos
+      release:
+        description: '是否发布版本'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
-  build-windows:
+  build-windows-x86_64:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows' || github.event.inputs.platform == ''
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,16 +32,103 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        target: x86_64-pc-windows-msvc
         default: true
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      run: cargo build --release
+      run: cargo build --release --target x86_64-pc-windows-msvc
+    - name: Run tests
+      run: cargo test --release --target x86_64-pc-windows-msvc
+    - name: Generate build report
+      run: |
+        echo "构建报告" > build_report.txt
+        echo "平台: Windows x86_64" >> build_report.txt
+        echo "版本: ${{ github.ref_name }}" >> build_report.txt
+        echo "提交: ${{ github.sha }}" >> build_report.txt
+        echo "构建时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')" >> build_report.txt
+        echo "构建状态: 成功" >> build_report.txt
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: doh-toggle-windows
-        path: target/release/doh_toggle.exe
+        name: doh-toggle-windows-x86_64
+        path: |
+          target/x86_64-pc-windows-msvc/release/doh_toggle.exe
+          build_report.txt
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs-windows-x86_64
+        path: target/x86_64-pc-windows-msvc/release/build.log
 
-  build-macos:
+  build-windows-i686:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'windows' || github.event.inputs.platform == ''
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: i686-pc-windows-msvc
+        default: true
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    - name: Build
+      run: cargo build --release --target i686-pc-windows-msvc
+    - name: Run tests
+      run: cargo test --release --target i686-pc-windows-msvc
+    - name: Generate build report
+      run: |
+        echo "构建报告" > build_report.txt
+        echo "平台: Windows i686 (32位)" >> build_report.txt
+        echo "版本: ${{ github.ref_name }}" >> build_report.txt
+        echo "提交: ${{ github.sha }}" >> build_report.txt
+        echo "构建时间: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')" >> build_report.txt
+        echo "构建状态: 成功" >> build_report.txt
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: doh-toggle-windows-i686
+        path: |
+          target/i686-pc-windows-msvc/release/doh_toggle.exe
+          build_report.txt
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs-windows-i686
+        path: target/i686-pc-windows-msvc/release/build.log
+
+  build-macos-x86_64:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'macos' || github.event.inputs.platform == ''
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -32,11 +136,97 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        target: x86_64-apple-darwin
         default: true
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
     - name: Build
-      run: cargo build --release
+      run: cargo build --release --target x86_64-apple-darwin
+    - name: Run tests
+      run: cargo test --release --target x86_64-apple-darwin
+    - name: Generate build report
+      run: |
+        echo "构建报告" > build_report.txt
+        echo "平台: macOS x86_64 (Intel)" >> build_report.txt
+        echo "版本: ${{ github.ref_name }}" >> build_report.txt
+        echo "提交: ${{ github.sha }}" >> build_report.txt
+        echo "构建时间: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> build_report.txt
+        echo "构建状态: 成功" >> build_report.txt
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
-        name: doh-toggle-macos
-        path: target/release/doh_toggle
+        name: doh-toggle-macos-x86_64
+        path: |
+          target/x86_64-apple-darwin/release/doh_toggle
+          build_report.txt
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs-macos-x86_64
+        path: target/x86_64-apple-darwin/release/build.log
+
+  build-macos-aarch64:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'macos' || github.event.inputs.platform == ''
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-apple-darwin
+        default: true
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo index
+      uses: actions/cache@v3
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    - name: Cache cargo build
+      uses: actions/cache@v3
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    - name: Build
+      run: cargo build --release --target aarch64-apple-darwin
+    - name: Run tests
+      run: cargo test --release --target aarch64-apple-darwin
+    - name: Generate build report
+      run: |
+        echo "构建报告" > build_report.txt
+        echo "平台: macOS aarch64 (Apple Silicon)" >> build_report.txt
+        echo "版本: ${{ github.ref_name }}" >> build_report.txt
+        echo "提交: ${{ github.sha }}" >> build_report.txt
+        echo "构建时间: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> build_report.txt
+        echo "构建状态: 成功" >> build_report.txt
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: doh-toggle-macos-aarch64
+        path: |
+          target/aarch64-apple-darwin/release/doh_toggle
+          build_report.txt
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-logs-macos-aarch64
+        path: target/aarch64-apple-darwin/release/build.log
